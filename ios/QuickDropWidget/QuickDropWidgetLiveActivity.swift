@@ -13,8 +13,7 @@ struct QuickDropWidgetAttributes: ActivityAttributes {
   public struct ContentState: Codable, Hashable {
     var startDate: Date?
     var endDate: Date?
-    var halfMinuteLeft: Bool = false
-    var timeLeftSeconds: Double? = 27
+    var halfMinuteLeft: Bool = true
     var minutesLeft: Int?
     var timerEnded: Bool = false
 
@@ -50,7 +49,23 @@ struct QuickDropWidgetLiveActivity: Widget {
           } else {
             if context.state.halfMinuteLeft {
               HStack {
-                CountdownView(timeLeft: context.state.timeLeftSeconds ?? 0.0, size: 32, fontSize: 12, lineWidth: 4)
+                if let range = context.state.getActivityDateRange() {
+                  ProgressView(
+                    timerInterval: range,
+                    countsDown: true,
+                    label: { EmptyView() },
+                    currentValueLabel: {
+                      Text(timerInterval: range, countsDown: true)
+                        .font(.system(size: 16, weight: .bold, design: .default))
+                        .rotationEffect(.degrees(-90))
+                    }
+                  )
+                  .progressViewStyle(.circular)
+                  .foregroundStyle(.blue)
+                  .tint(.blue)
+                  .frame(width: 48, height: 48, alignment: .center)
+                  .rotationEffect(.degrees(90))
+                }
                 Text("seconds to connect")
                   .font(.system(size: 15, weight: .bold, design: .default))
                   .foregroundStyle(.white)
@@ -92,7 +107,23 @@ struct QuickDropWidgetLiveActivity: Widget {
             }
           } else {
             if context.state.halfMinuteLeft {
-              CountdownView(timeLeft: context.state.timeLeftSeconds ?? 0.0, size: 48, fontSize: 18, lineWidth: 4)
+              if let range = context.state.getActivityDateRange() {
+                ProgressView(
+                  timerInterval: range,
+                  countsDown: true,
+                  label: { EmptyView() },
+                  currentValueLabel: {
+                    Text(timerInterval: range, countsDown: true)
+                      .font(.system(size: 16, weight: .bold, design: .default))
+                      .rotationEffect(.degrees(-90))
+                  }
+                )
+                .progressViewStyle(.circular)
+                .foregroundStyle(.blue)
+                .tint(.blue)
+                .frame(width: 48, height: 48, alignment: .center)
+                .rotationEffect(.degrees(90))
+              }
             } else {
               Text("\(context.state.minutesLeft ?? 0) min")
                 .font(.system(size: 16, weight: .bold, design: .default))
@@ -128,8 +159,23 @@ struct QuickDropWidgetLiveActivity: Widget {
           }
         } else {
           if context.state.halfMinuteLeft {
-            CountdownView(timeLeft: context.state.timeLeftSeconds ?? 0.0, size: 24, fontSize: 10, lineWidth: 3)
-              .padding(.trailing, 4)
+            if let range = context.state.getActivityDateRange() {
+              ProgressView(
+                timerInterval: range,
+                countsDown: true,
+                label: { EmptyView() },
+                currentValueLabel: {
+                  Text(timerInterval: range, countsDown: true)
+                    .font(.system(size: 8, weight: .bold, design: .default))
+                    .rotationEffect(.degrees(-90))
+                }
+              )
+              .progressViewStyle(.circular)
+              .foregroundStyle(.blue)
+              .tint(.blue)
+              .frame(width: 24, height: 24, alignment: .center)
+              .rotationEffect(.degrees(90))
+            }
           } else {
             Text("\(context.state.minutesLeft ?? 0) min")
           }
@@ -146,7 +192,23 @@ struct QuickDropWidgetLiveActivity: Widget {
           }
         } else {
           if context.state.halfMinuteLeft {
-            CountdownView(timeLeft: context.state.timeLeftSeconds ?? 0.0, size: 24, fontSize: 10, lineWidth: 3)
+            if let range = context.state.getActivityDateRange() {
+              ProgressView(
+                timerInterval: range,
+                countsDown: true,
+                label: { EmptyView() },
+                currentValueLabel: {
+                  Text(timerInterval: range, countsDown: true)
+                    .font(.system(size: 8, weight: .bold, design: .default))
+                    .rotationEffect(.degrees(-90))
+                }
+              )
+              .progressViewStyle(.circular)
+              .foregroundStyle(.blue)
+              .tint(.blue)
+              .frame(width: 24, height: 24, alignment: .center)
+              .rotationEffect(.degrees(90))
+            }
           } else {
             Text("\(context.state.minutesLeft ?? 0) min")
               .font(.system(size: 10, weight: .bold, design: .default))

@@ -56,7 +56,7 @@ const useTimer = () => {
                 setIsPlaying(false);
                 QuickDropWidgetModule.timerHasEnded(true)
             }
-        }, 1000);
+        }, 30000);
     };
 
     const reset = () => {
