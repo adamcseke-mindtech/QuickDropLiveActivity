@@ -11,11 +11,12 @@ import SwiftUI
 
 struct QuickDropWidgetAttributes: ActivityAttributes {
   public struct ContentState: Codable, Hashable {
-    var startDate: Date?
-    var endDate: Date?
-    var halfMinuteLeft: Bool = true
+    var startDate: Date? = Date.now
+    var endDate: Date? = Date().addingTimeInterval(30)
+    var halfMinuteLeft: Bool = false
     var minutesLeft: Int?
     var timerEnded: Bool = false
+    var tenSecondsLeft: Bool = false
 
     func getActivityDateRange() -> ClosedRange<Date>? {
       guard let startDate = startDate, let endDate = endDate else {
@@ -61,8 +62,8 @@ struct QuickDropWidgetLiveActivity: Widget {
                     }
                   )
                   .progressViewStyle(.circular)
-                  .foregroundStyle(.blue)
-                  .tint(.blue)
+                  .foregroundStyle(context.state.tenSecondsLeft ? Color("qdred") : Color("qdblue"))
+                  .tint(context.state.tenSecondsLeft ? Color("qdred") : Color("qdblue"))
                   .frame(width: 48, height: 48, alignment: .center)
                   .rotationEffect(.degrees(90))
                 }
@@ -86,7 +87,7 @@ struct QuickDropWidgetLiveActivity: Widget {
           }
         }
 
-        Text(context.state.timerEnded ? "You lost your place in line, since you did not connect within 30 seconds." : (context.state.halfMinuteLeft ? "The Smart Bin is ready for you, you have 30 seconds to connect" : "There are 3 people in front of you, you need to wait approx. 4 minutes"))
+        Text(context.state.timerEnded ? "You lost your place in line, since you did not connect within 30 seconds." : (context.state.halfMinuteLeft ? "The Smart Bin is ready for you, you have 30 seconds to connect" : "There are 3 people in front of you, you need to wait approx. \(context.state.minutesLeft ?? 0) minutes"))
           .font(.system(size: 13))
           .foregroundStyle(.white)
           .multilineTextAlignment(.leading)
@@ -119,8 +120,8 @@ struct QuickDropWidgetLiveActivity: Widget {
                   }
                 )
                 .progressViewStyle(.circular)
-                .foregroundStyle(.blue)
-                .tint(.blue)
+                .foregroundStyle(context.state.tenSecondsLeft ? Color("qdred") : Color("qdblue"))
+                .tint(context.state.tenSecondsLeft ? Color("qdred") : Color("qdblue"))
                 .frame(width: 48, height: 48, alignment: .center)
                 .rotationEffect(.degrees(90))
               }
@@ -134,7 +135,7 @@ struct QuickDropWidgetLiveActivity: Widget {
         }
 
         DynamicIslandExpandedRegion(.center) {
-          Text(context.state.timerEnded ? "You lost your place in line, since you did not connect within 30 seconds." : "There are 3 people in front of you, you need to wait approx. \(context.state.minutesLeft ?? 0) minutes")
+          Text(context.state.timerEnded ? "You lost your place in line, since you did not connect within 30 seconds." : (context.state.halfMinuteLeft ? "The Smart Bin is ready for you, you have 30 seconds to connect" : "There are 3 people in front of you, you need to wait approx. \(context.state.minutesLeft ?? 0) minutes"))
             .foregroundStyle(.white)
             .font(.system(size: 12, weight: .bold, design: .default))
             .frame(maxHeight: 48, alignment: .top)
@@ -171,8 +172,8 @@ struct QuickDropWidgetLiveActivity: Widget {
                 }
               )
               .progressViewStyle(.circular)
-              .foregroundStyle(.blue)
-              .tint(.blue)
+              .foregroundStyle(context.state.tenSecondsLeft ? Color("qdred") : Color("qdblue"))
+              .tint(context.state.tenSecondsLeft ? Color("qdred") : Color("qdblue"))
               .frame(width: 24, height: 24, alignment: .center)
               .rotationEffect(.degrees(90))
             }
@@ -204,8 +205,8 @@ struct QuickDropWidgetLiveActivity: Widget {
                 }
               )
               .progressViewStyle(.circular)
-              .foregroundStyle(.blue)
-              .tint(.blue)
+              .foregroundStyle(context.state.tenSecondsLeft ? Color("qdred") : Color("qdblue"))
+              .tint(context.state.tenSecondsLeft ? Color("qdred") : Color("qdblue"))
               .frame(width: 24, height: 24, alignment: .center)
               .rotationEffect(.degrees(90))
             }

@@ -13,11 +13,10 @@
   return NO;
 }
 
-RCT_EXTERN_METHOD(startLiveActivity:(double)startDateTimestamp)
-RCT_EXTERN_METHOD(setEndDate:(double)endDateTimestamp)
-RCT_EXTERN_METHOD(setStartDate:(double)startDateTimestamp)
-RCT_EXTERN_METHOD(updateHalfMinuteLeft:(BOOL)halfMinuteLeft)
-RCT_EXTERN_METHOD(updateMinutesLeft:(int)minutesLeft)
+//RCT_EXTERN_METHOD(startLiveActivity:(double)startDateTimestamp)
+RCT_EXTERN_METHOD(startLiveActivity:(double)startDateTimestamp endDateTimestamp:(double)endDateTimestamp initialMinutesLeft:(int)minutesLeft)
+RCT_EXTERN_METHOD(updateActivityState:(int)minutesLeft halfMinuteLeft:(BOOL)halfMinuteLeft)
+RCT_EXTERN_METHOD(setTenSecondsLeft:(BOOL)tenSecondsLeft)
 RCT_EXTERN_METHOD(timerHasEnded:(BOOL)ended)
 RCT_EXTERN_METHOD(stopLiveActivity)
 

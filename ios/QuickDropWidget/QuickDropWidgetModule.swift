@@ -16,6 +16,7 @@ class QuickDropWidgetModule: NSObject {
   private var halfMinuteLeft: Bool = false
   private var minutesLeft: Int?
   private var timerEnded: Bool?
+  private var tenSecondsLeft: Bool = false
 
   private func areActivitiesEnabled() -> Bool {
     return ActivityAuthorizationInfo().areActivitiesEnabled
@@ -26,87 +27,42 @@ class QuickDropWidgetModule: NSObject {
     currentActivity = nil
   }
 
-  @objc
-  func setStartDate(_ startDateTimestamp: Double) -> Void {
+  @objc(startLiveActivity:endDateTimestamp:initialMinutesLeft:)
+  func startLiveActivity(_ startDateTimestamp: Double, endDateTimestamp: Double, initialMinutesLeft minutesLeft: Int) {
     startDate = Date(timeIntervalSince1970: startDateTimestamp)
-  }
-
-  @objc
-  func setEndDate(_ endDateTimestamp: Double) -> Void {
     endDate = Date(timeIntervalSince1970: endDateTimestamp)
-  }
+    self.minutesLeft = minutesLeft
 
-  @objc
-  func startLiveActivity(_ startDateTimestamp: Double) -> Void {
-    startDate = Date(timeIntervalSince1970: startDateTimestamp)
-    if (!areActivitiesEnabled()) {
+    if !areActivitiesEnabled() {
+      print("Activities are not enabled.")
       return
     }
+
     let activityAttributes = QuickDropWidgetAttributes()
-    let contentState = QuickDropWidgetAttributes.ContentState(startDate: startDate, endDate: endDate)
-    let activityContent = ActivityContent(state: contentState,  staleDate: nil)
+    let contentState = QuickDropWidgetAttributes.ContentState(
+      startDate: startDate,
+      endDate: endDate,
+      halfMinuteLeft: halfMinuteLeft,
+      minutesLeft: minutesLeft
+    )
+
+    let activityContent = ActivityContent(state: contentState, staleDate: nil)
     do {
       currentActivity = try Activity.request(attributes: activityAttributes, content: activityContent)
+      print("Live Activity started with initial minutes left: \(minutesLeft)")
     } catch {
-      print(error.localizedDescription)
+      print("Failed to start live activity: \(error.localizedDescription)")
     }
   }
 
-  @objc func updateMinutesLeft(_ minutesLeft: Int) {
-      guard let currentActivity = self.currentActivity else {
-          print("Current activity is nil.")
-          return
-      }
-
-      self.minutesLeft = minutesLeft
-
-      let updatedContentState = QuickDropWidgetAttributes.ContentState(
-          startDate: self.startDate,
-          endDate: self.endDate,
-          halfMinuteLeft: self.halfMinuteLeft,
-          minutesLeft: minutesLeft
-      )
-
-      Task {
-          do {
-              try await currentActivity.update(using: updatedContentState)
-              print("Live Activity updated with minutes left: \(minutesLeft)")
-          } catch {
-              print("Failed to update the live activity: \(error)")
-          }
-      }
-  }
-
-  @objc
-  func timerHasEnded(_ ended: Bool) {
-      guard let currentActivity = self.currentActivity,
-            let startDate = self.startDate,
-            let endDate = self.endDate else {
-          print("Current activity, start date, or end date is nil.")
-          return
-      }
-
-      Task {
-          do {
-              let updatedContentState = QuickDropWidgetAttributes.ContentState(
-                  startDate: startDate,
-                  endDate: endDate,
-                  halfMinuteLeft: self.halfMinuteLeft,
-                  minutesLeft: self.minutesLeft,
-                  timerEnded: ended
-              )
-              try await currentActivity.update(using: updatedContentState)
-              print("Live Activity updated: Timer has ended.")
-          } catch {
-              print("Failed to update the live activity: \(error)")
-          }
-      }
-  }
-
-
-  @objc func updateHalfMinuteLeft(_ halfMinuteLeft: Bool) -> Void {
-    startDate = Date.now
+  @objc(updateActivityState:halfMinuteLeft:)
+  func updateActivityState(minutesLeft: Int, halfMinuteLeft: Bool) {
+    self.minutesLeft = minutesLeft
     self.halfMinuteLeft = halfMinuteLeft
+
+    if halfMinuteLeft {
+      startDate = Date.now
+    }
 
     guard let currentActivity = self.currentActivity,
           let startDate = self.startDate,
@@ -117,8 +73,57 @@ class QuickDropWidgetModule: NSObject {
 
     Task {
       do {
-        let updatedContentState = QuickDropWidgetAttributes.ContentState(startDate: startDate, endDate: endDate, halfMinuteLeft: halfMinuteLeft)
+        let updatedContentState = QuickDropWidgetAttributes.ContentState(startDate: startDate, endDate: endDate, halfMinuteLeft: halfMinuteLeft, minutesLeft: minutesLeft)
         try await currentActivity.update(using: updatedContentState)
+        print("Live Activity updated with minutes left: \(minutesLeft), flag: \(halfMinuteLeft)")
+      } catch {
+        print("Failed to update the live activity: \(error)")
+      }
+    }
+  }
+
+  @objc(setTenSecondsLeft:)
+  func setTenSecondsLeft(_ tenSecondsLeft: Bool) {
+    self.tenSecondsLeft = tenSecondsLeft
+
+    guard let currentActivity = self.currentActivity,
+          let startDate = self.startDate,
+          let endDate = self.endDate else {
+      print("Current activity, start date, or end date is nil.")
+      return
+    }
+
+    Task {
+      do {
+        let updatedContentState = QuickDropWidgetAttributes.ContentState(startDate: startDate, endDate: endDate, halfMinuteLeft: halfMinuteLeft, minutesLeft: minutesLeft, tenSecondsLeft: tenSecondsLeft)
+        try await currentActivity.update(using: updatedContentState)
+        print("Live Activity updated with minutes left: \(minutesLeft), flag: \(halfMinuteLeft)")
+      } catch {
+        print("Failed to update the live activity: \(error)")
+      }
+    }
+  }
+
+  @objc
+  func timerHasEnded(_ ended: Bool) {
+    guard let currentActivity = self.currentActivity,
+          let startDate = self.startDate,
+          let endDate = self.endDate else {
+      print("Current activity, start date, or end date is nil.")
+      return
+    }
+
+    Task {
+      do {
+        let updatedContentState = QuickDropWidgetAttributes.ContentState(
+          startDate: startDate,
+          endDate: endDate,
+          halfMinuteLeft: self.halfMinuteLeft,
+          minutesLeft: self.minutesLeft,
+          timerEnded: ended
+        )
+        try await currentActivity.update(using: updatedContentState)
+        print("Live Activity updated: Timer has ended.")
       } catch {
         print("Failed to update the live activity: \(error)")
       }

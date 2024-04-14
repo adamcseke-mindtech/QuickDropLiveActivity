@@ -21,9 +21,10 @@ function App(): React.JSX.Element {
       <View style={styles.buttonsContainer}>
         <View style={styles.buttonWrapper}>
           <Button
-            title={isPlaying ? 'Pause' : 'Play'}
+            title={isPlaying ? 'Counting' : 'Count down'}
             onPress={play}
             color={isDarkMode ? '#BB86FC' : '#6200EE'}
+            disabled={isPlaying}
           />
         </View>
         <Button
@@ -59,4 +60,10 @@ const styles = StyleSheet.create({
   buttonWrapper: {
     marginRight: 32,
   },
+  enabledButton: {
+
+  },
+  disabledButton: {
+    
+  }
 });

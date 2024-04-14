@@ -1,5 +1,5 @@
 import React from 'react';
-import { NativeModules } from 'react-native';
+import { NativeModules, Vibration } from 'react-native';
 import BackgroundTimer from 'react-native-background-timer';
 
 const { QuickDropWidgetModule } = NativeModules;
@@ -10,24 +10,24 @@ const useTimer = () => {
     const startDate = React.useRef<number | null>(null);
     const endDate = React.useRef<number | null>(null);
     const lastUpdatedMinute = React.useRef<number | null>(null);
+    const hasTriggeredHalfMinuteLeft = React.useRef<boolean>(false);
+    const hasTriggeredTenSecondsLeft = React.useRef<boolean>(false);
+    const hasTimerEnded = React.useRef<boolean>(false);
 
-    const totalDuration = 45;
+    const totalDuration = 70;
 
     const play = () => {
         if (isPlaying) return;
         setIsPlaying(true);
 
         const now = Date.now();
-        if (!startDate.current || !endDate.current) {
-            startDate.current = now;
-            endDate.current = now + totalDuration * 1000;
-        }
-
-        QuickDropWidgetModule.setEndDate(endDate.current / 1000);
-        QuickDropWidgetModule.startLiveActivity(startDate.current / 1000);
+        startDate.current = now;
+        endDate.current = now + totalDuration * 1000;
 
         const initialMinutesLeft = Math.ceil(totalDuration / 60);
-        QuickDropWidgetModule.updateMinutesLeft(initialMinutesLeft);
+        QuickDropWidgetModule.startLiveActivity(startDate.current / 1000, endDate.current / 1000, initialMinutesLeft)
+        QuickDropWidgetModule.updateActivityState(initialMinutesLeft, false);
+        hasTriggeredTenSecondsLeft.current = false
         lastUpdatedMinute.current = initialMinutesLeft;
 
         BackgroundTimer.runBackgroundTimer(() => {
@@ -39,25 +39,44 @@ const useTimer = () => {
             setElapsedTimeInMs(timeLeftInSeconds > 0 ? totalDuration * 1000 - timeLeftInSeconds * 1000 : 0);
 
             if (lastUpdatedMinute.current !== minutesLeft) {
-                QuickDropWidgetModule.updateMinutesLeft(minutesLeft);
+                QuickDropWidgetModule.updateActivityState(minutesLeft, false);
                 lastUpdatedMinute.current = minutesLeft;
             }
 
-            if (timeLeftInSeconds <= 30 && timeLeftInSeconds > 0) {
-                QuickDropWidgetModule.updateHalfMinuteLeft(true);
-                QuickDropWidgetModule.updateTimeLeftSeconds(timeLeftInSeconds);
-            } else if (timeLeftInSeconds > 30 && timeLeftInSeconds <= 60) {
-                QuickDropWidgetModule.updateMinutesLeft(1);
+            if (timeLeftInSeconds <= 30 && timeLeftInSeconds > 0 && !hasTriggeredHalfMinuteLeft.current) {
+                hasTriggeredHalfMinuteLeft.current = true;
+                QuickDropWidgetModule.updateActivityState(minutesLeft, true);
             } else if (timeLeftInSeconds > 30) {
-                QuickDropWidgetModule.updateHalfMinuteLeft(false);
-            } else if (timeLeftInSeconds === 0) {
-                QuickDropWidgetModule.updateHalfMinuteLeft(false);
-                BackgroundTimer.stopBackgroundTimer();
-                setIsPlaying(false);
-                QuickDropWidgetModule.timerHasEnded(true)
+                hasTriggeredHalfMinuteLeft.current = false;
+                QuickDropWidgetModule.updateActivityState(minutesLeft, false);
+            } else if (timeLeftInSeconds <= 10 && !hasTriggeredTenSecondsLeft.current) {
+                hasTriggeredTenSecondsLeft.current = true
+                Vibration.vibrate(500);
+                QuickDropWidgetModule.setTenSecondsLeft(true)
             }
-        }, 30000);
+
+            if (timeLeftInSeconds === 0) {
+                if (!hasTimerEnded.current) {
+                    hasTimerEnded.current = true;
+                    QuickDropWidgetModule.updateActivityState(minutesLeft, false);
+                    BackgroundTimer.stopBackgroundTimer();
+                    QuickDropWidgetModule.timerHasEnded(true);
+                } else {
+                    BackgroundTimer.stopBackgroundTimer();
+                }
+            }
+        }, 1000);
+
+        BackgroundTimer.stopBackgroundTimer();
     };
+
+    React.useEffect(() => {
+        return () => {
+            if (isPlaying) {
+                BackgroundTimer.stopBackgroundTimer();
+            }
+        };
+    }, [isPlaying]);
 
     const reset = () => {
         BackgroundTimer.stopBackgroundTimer();
@@ -66,14 +85,10 @@ const useTimer = () => {
         startDate.current = null;
         endDate.current = null;
         lastUpdatedMinute.current = null;
+        hasTriggeredHalfMinuteLeft.current = false;
+        hasTimerEnded.current = false;
         QuickDropWidgetModule.stopLiveActivity();
     };
-
-    React.useEffect(() => {
-        return () => {
-            BackgroundTimer.stopBackgroundTimer();
-        };
-    }, []);
 
     const timeLeft = totalDuration - elapsedTimeInMs / 1000;
     const formattedValue = `${Math.floor(timeLeft / 60)}:${`0${Math.floor(timeLeft % 60)}`.slice(-2)}`;
